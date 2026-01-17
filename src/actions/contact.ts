@@ -52,9 +52,18 @@ export async function getContacts() {
     try {
         await connectDB();
         const contacts = await Contact.find().sort({ createdAt: -1 }).lean();
+
+        // Convert ObjectId and Date types to serializable primitives
+        const serializedContacts = contacts.map(contact => ({
+            ...contact,
+            _id: contact._id.toString(),
+            createdAt: contact.createdAt instanceof Date ? contact.createdAt.toISOString() : contact.createdAt,
+            updatedAt: contact.updatedAt instanceof Date ? contact.updatedAt.toISOString() : contact.updatedAt,
+        }));
+
         return {
             success: true,
-            contacts,
+            contacts: serializedContacts,
         };
     } catch (error) {
         console.error("Error getting contacts:", error);

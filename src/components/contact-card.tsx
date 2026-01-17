@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useEffect } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
@@ -31,21 +31,52 @@ const statusOptions: Array<'pending' | 'read' | 'replied'> = ['pending', 'read',
 export default function ContactCard({ contact }: ContactCardProps) {
     const [isPending, startTransition] = useTransition()
     const [message, setMessage] = useState<string>("")
+    const messageTimeoutRef = useRef<number | null>(null)
+    const isMountedRef = useRef(true)
 
     const handleStatusChange = (newStatus: 'pending' | 'read' | 'replied') => {
         if (newStatus === contact.status) return
 
-        setMessage("")
+        // Clear any existing timeout before setting a new one
+        if (messageTimeoutRef.current) {
+            clearTimeout(messageTimeoutRef.current)
+            messageTimeoutRef.current = null
+        }
+
+        if (isMountedRef.current) {
+            setMessage("")
+        }
         startTransition(async () => {
             const result = await updateContact(contact._id, newStatus)
             if (result.success) {
-                setMessage("Status updated successfully!")
-                setTimeout(() => setMessage(""), 3000)
+                if (isMountedRef.current) {
+                    setMessage("Status updated successfully!")
+                    messageTimeoutRef.current = window.setTimeout(() => {
+                        if (isMountedRef.current) {
+                            setMessage("")
+                        }
+                        messageTimeoutRef.current = null
+                    }, 3000)
+                }
             } else {
-                setMessage(result.message || "Failed to update status")
+                if (isMountedRef.current) {
+                    setMessage(result.message || "Failed to update status")
+                }
             }
         })
     }
+
+    useEffect(() => {
+        return () => {
+            // Clear timeout on unmount
+            if (messageTimeoutRef.current) {
+                clearTimeout(messageTimeoutRef.current)
+                messageTimeoutRef.current = null
+            }
+            // Mark component as unmounted
+            isMountedRef.current = false
+        }
+    }, [])
 
     const formatDate = (date: string | Date) => {
         const d = new Date(date)
@@ -93,7 +124,7 @@ export default function ContactCard({ contact }: ContactCardProps) {
             <CardFooter className="border-t flex items-center justify-between">
                 <div className="flex flex-col gap-1 text-xs text-muted-foreground">
                     <span>Created: {formatDate(contact.createdAt)}</span>
-                    {contact.updatedAt && contact.createdAt !== contact.updatedAt && (
+                    {contact.updatedAt && new Date(contact.createdAt).getTime() !== new Date(contact.updatedAt).getTime() && (
                         <span>Updated: {formatDate(contact.updatedAt)}</span>
                     )}
                 </div>
