@@ -14,6 +14,8 @@ export const connectDB = async () => {
         return;
     }
     try {
+        // Set strictQuery to false to prepare for Mongoose 7
+        mongoose.set('strictQuery', false);
         await mongoose.connect(MONGO_URI);
         isConnected = true;
         console.log('Connected to MongoDB');
