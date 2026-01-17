@@ -1,6 +1,7 @@
 import { getContacts } from '@/actions/contact';
 import { Badge } from "@/components/ui/badge"
 import ContactCard from './contact-card';
+import { Contact } from "@/types/contact";
 
 async function ContactList() {
     const result = await getContacts();
@@ -29,19 +30,10 @@ async function ContactList() {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {data.map((contact) => (
+                    {data.map((contact: Contact) => (
                         <ContactCard
-                            key={contact._id.toString()}
-                            contact={{
-                                _id: contact._id.toString(),
-                                name: contact.name,
-                                email: contact.email,
-                                subject: contact.subject,
-                                message: contact.message,
-                                status: contact.status as 'pending' | 'read' | 'replied',
-                                createdAt: contact.createdAt,
-                                updatedAt: contact.updatedAt,
-                            }}
+                            key={contact._id}
+                            contact={contact}
                         />
                     ))}
                 </div>

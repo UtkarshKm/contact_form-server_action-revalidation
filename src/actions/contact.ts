@@ -1,8 +1,9 @@
 'use server'
 
 import { connectDB } from "@/lib/db"
-import Contact from "@/models/contact"
+import ContactModel from "@/models/contact"
 import { revalidatePath } from "next/cache"
+import { ContactStatus, Contact } from "@/types/contact"
 
 interface ContactData {
     name: string;
@@ -11,7 +12,21 @@ interface ContactData {
     message: string;
 }
 
-export async function createContact(formData: ContactData) {
+type ActionResponse<T = void> =
+    | { success: true; message: string; data?: T }
+    | { success: false; message: string; error?: string };
+
+type CreateContactResponse =
+    | { success: true; message: string; contactId: string }
+    | { success: false; message: string; error?: string };
+
+type GetContactsResponse =
+    | { success: true; contacts: Contact[] }
+    | { success: false; message: string; error?: string };
+
+type UpdateContactResponse = ActionResponse;
+
+export async function createContact(formData: ContactData): Promise<CreateContactResponse> {
     try {
         await connectDB();
         const name = formData.name;
@@ -26,7 +41,7 @@ export async function createContact(formData: ContactData) {
                 message: "All fields are required",
             }
         }
-        const contact = await Contact.create({
+        const contact = await ContactModel.create({
             name: name.trim(),
             email: email.trim(),
             subject: subject.trim(),
@@ -48,17 +63,21 @@ export async function createContact(formData: ContactData) {
     }
 }
 
-export async function getContacts() {
+export async function getContacts(): Promise<GetContactsResponse> {
     try {
         await connectDB();
-        const contacts = await Contact.find().sort({ createdAt: -1 }).lean();
+        const contacts = await ContactModel.find().sort({ createdAt: -1 }).lean();
 
         // Convert ObjectId and Date types to serializable primitives
-        const serializedContacts = contacts.map(contact => ({
-            ...contact,
-            _id: contact._id.toString(),
-            createdAt: contact.createdAt instanceof Date ? contact.createdAt.toISOString() : contact.createdAt,
-            updatedAt: contact.updatedAt instanceof Date ? contact.updatedAt.toISOString() : contact.updatedAt,
+        const serializedContacts: Contact[] = contacts.map((contact: Record<string, unknown>) => ({
+            _id: String(contact._id),
+            name: String(contact.name),
+            email: String(contact.email),
+            subject: String(contact.subject),
+            message: String(contact.message),
+            status: contact.status as ContactStatus,
+            createdAt: contact.createdAt instanceof Date ? contact.createdAt.toISOString() : String(contact.createdAt),
+            updatedAt: contact.updatedAt instanceof Date ? contact.updatedAt.toISOString() : String(contact.updatedAt),
         }));
 
         return {
@@ -75,7 +94,7 @@ export async function getContacts() {
     }
 }
 
-export async function updateContact(contactId: string, status: 'pending' | 'read' | 'replied') {
+export async function updateContact(contactId: string, status: ContactStatus): Promise<UpdateContactResponse> {
     try {
         await connectDB();
 
@@ -97,7 +116,7 @@ export async function updateContact(contactId: string, status: 'pending' | 'read
         }
 
         // Update contact
-        const contact = await Contact.findByIdAndUpdate(
+        const contact = await ContactModel.findByIdAndUpdate(
             contactId,
             { status },
             { new: true }

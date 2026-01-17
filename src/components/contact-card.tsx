@@ -6,27 +6,19 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { updateContact } from "@/actions/contact"
 import { cn } from "@/lib/utils"
+import { Contact, ContactStatus } from "@/types/contact"
 
 interface ContactCardProps {
-    contact: {
-        _id: string;
-        name: string;
-        email: string;
-        subject: string;
-        message: string;
-        status: 'pending' | 'read' | 'replied';
-        createdAt: string | Date;
-        updatedAt: string | Date;
-    }
+    contact: Contact;
 }
 
-const statusColors = {
+const statusColors: Record<ContactStatus, string> = {
     pending: "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800",
     read: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
     replied: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
 }
 
-const statusOptions: Array<'pending' | 'read' | 'replied'> = ['pending', 'read', 'replied']
+const statusOptions: ContactStatus[] = ['pending', 'read', 'replied']
 
 export default function ContactCard({ contact }: ContactCardProps) {
     const [isPending, startTransition] = useTransition()
@@ -34,7 +26,7 @@ export default function ContactCard({ contact }: ContactCardProps) {
     const messageTimeoutRef = useRef<number | null>(null)
     const isMountedRef = useRef(true)
 
-    const handleStatusChange = (newStatus: 'pending' | 'read' | 'replied') => {
+    const handleStatusChange = (newStatus: ContactStatus) => {
         if (newStatus === contact.status) return
 
         // Clear any existing timeout before setting a new one
@@ -78,7 +70,7 @@ export default function ContactCard({ contact }: ContactCardProps) {
         }
     }, [])
 
-    const formatDate = (date: string | Date) => {
+    const formatDate = (date: string) => {
         const d = new Date(date)
         return d.toLocaleDateString('en-US', {
             year: 'numeric',
