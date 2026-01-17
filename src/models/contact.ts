@@ -12,10 +12,9 @@ const ContactSchema = new mongoose.Schema({
         required: [true, 'Email is required'],
         trim: true,
         maxlength: [50, 'Email must be less than 50 characters'],
-        unique: [true, 'Email must be unique'],
+        unique: true,
         match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address'],
-    },
-    subject: {
+    }, subject: {
         type: String,
         required: [true, 'Subject is required'],
         trim: true,
@@ -31,8 +30,11 @@ const ContactSchema = new mongoose.Schema({
         type: String,
         enum: ['pending', 'read', 'replied'],
         default: 'pending',
-    },{
+    },
+}, {
     timestamps: true,
-})
+}); 
 
-const Contact = mongoose.models.Contact || mongoose.model('Contact', ContactSchema);
+export const Contact = mongoose.models.Contact || mongoose.model('Contact', ContactSchema);
+
+export default Contact;
