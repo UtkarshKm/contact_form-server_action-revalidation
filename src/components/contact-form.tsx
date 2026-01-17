@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
+import { createContact } from "@/actions/contact"
 
 const formSchema = z.object({
     name: z.string()
@@ -46,16 +47,23 @@ function ContactForm() {
         },
     })
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true)
         setMessage("")
 
         try {
-            console.log(values)
-            setMessage("Form submitted successfully!")
-            form.reset()
+            const result = await createContact(values);
+            console.log("Form submission result:", result);
+
+            if (result.success) {
+                setMessage("Form submitted successfully!")
+                form.reset()
+            } else {
+                setMessage(result.message || "An error occurred. Please try again.")
+            }
         } catch {
             setMessage("An error occurred. Please try again.")
+
         } finally {
             setIsSubmitting(false)
         }
